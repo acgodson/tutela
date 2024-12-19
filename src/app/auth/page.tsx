@@ -30,7 +30,7 @@ import LoadingOverlay from "@/components/atoms/LoadingOverlay";
 export default function AuthPage() {
   const router = useRouter();
   const { authenticated, user } = usePrivy();
-  const { handleLogin } = useEthContext();
+  const { handleLogin, setCurrentFarmId } = useEthContext();
   const [isLoading, setIsLoading] = React.useState(false);
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
@@ -203,6 +203,7 @@ export default function AuthPage() {
                 type="button"
                 onClick={() => {
                   localStorage.setItem("currentFarm", selectedFarm);
+                  setCurrentFarmId(selectedFarm);
                   router.push("/");
                 }}
                 className="w-full h-14 mt-4 bg-[#B86EFF] hover:bg-[#A54EFF] text-white text-lg font-medium"

@@ -8,8 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/atoms/card";
-import { Input, Button } from "@/components/atoms/";
-
+import { Button } from "@/components/atoms";
 import { BadgeAlert, PiggyBank, ThermometerSun, MapPin } from "lucide-react";
 import {
   Table,
@@ -20,76 +19,80 @@ import {
   TableRow,
 } from "@/components/atoms/table";
 import NavBar from "@/components/molecules/Navbar";
-import { usePrivy } from "@privy-io/react-auth";
+import { useDashboardData } from "@/hooks/useDashboardData";
 
-const PigStatus = ({ x, y, hasFever, lastUpdate, isNew = false }: any) => (
-  <div
-    className={`absolute transition-colors duration-500 cursor-pointer
-      ${
-        isNew ? "text-gray-500" : hasFever ? "text-red-500" : "text-green-500"
-      }`}
-    style={{ left: `${x}%`, top: `${y}%` }}
-    title={`Last Updated: ${lastUpdate}`}
-  >
-    <PiggyBank className="w-6 h-6" />
-  </div>
-);
+import { Alert, AlertDescription } from "@/components/atoms/alert";
+import { AlertCircle } from "lucide-react";
+import PigStatus from "@/components/molecules/PigStatus";
+import { useEthContext } from "@/evm/EthContext";
 
 export default function Dashboard() {
-  const { user } = usePrivy();
-
   const [isDetailedView, setIsDetailedView] = React.useState(false);
   const [monitoringView, setMonitoringView] = React.useState<"map" | "table">(
     "map"
   );
 
-  // Mock data - replace with real data from your API
-  const pigData = [
-    {
-      id: 1,
-      x: 20,
-      y: 30,
-      hasFever: false,
-      lastUpdate: "2 mins ago",
-      region: "north",
-      farmerId: "farmer1",
-    },
-    {
-      id: 2,
-      x: 45,
-      y: 60,
-      hasFever: true,
-      lastUpdate: "1 min ago",
-      region: "north",
-      farmerId: "farmer1",
-    },
-    {
-      id: 3,
-      x: 70,
-      y: 40,
-      hasFever: false,
-      lastUpdate: "5 mins ago",
-      region: "south",
-      farmerId: "farmer2",
-    },
-    {
-      id: 4,
-      x: 30,
-      y: 70,
-      isNew: true,
-      lastUpdate: "Just registered",
-      region: "south",
-      farmerId: "farmer1",
-    },
-  ];
+  const { selectedRegion, currentFarmId } = useEthContext();
 
-  const filteredPigData = pigData.filter((pig) => {
-    if (!user) return true; // Show all in regional view
-    // it shoulf be regional by default but can be filtered down to farm is the farmer is authenticated
-  });
+  const { pigData, stats, isLoading, error, isAuthenticated } =
+    useDashboardData(selectedRegion.topicId);
 
-  // Render function for detailed view
-  const renderDetailedView = () => (
+  // Stats Cards Component
+  const StatsCards = () => (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <Card className="bg-[#1C1C1E] border-gray-800">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-sm font-medium">Total Monitored</CardTitle>
+          <PiggyBank className="w-4 h-4 text-[#B86EFF]" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{stats.totalMonitored}</div>
+          <p className="text-xs text-gray-400">
+            0
+            {/* {stats??.dailyChange > 0
+              ? `+${stats.dailyChange}`
+              : stats.dailyChange}{" "} */}
+            from yesterday
+          </p>
+        </CardContent>
+      </Card>
+
+      {currentFarmId && (
+        <Card className="bg-[#1C1C1E] border-gray-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">
+              Current Alerts
+            </CardTitle>
+            <BadgeAlert className="w-4 h-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-500">
+              {stats.currentAlerts}
+            </div>
+            <p className="text-xs text-gray-400">Requires attention</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {currentFarmId && (
+        <Card className="bg-[#1C1C1E] border-gray-800">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Health Index</CardTitle>
+            <ThermometerSun className="w-4 h-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-500">
+              {stats.healthIndex.toFixed(1)}%
+            </div>
+            <p className="text-xs text-gray-400">Last 24 hours</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  // Detailed View Component
+  const DetailedView = () => (
     <Card className="bg-[#1C1C1E] border-gray-800">
       <CardHeader>
         <div className="flex justify-between items-center">
@@ -97,14 +100,14 @@ export default function Dashboard() {
           <div className="flex gap-2">
             <Button
               variant="ghost"
-              className={`${monitoringView === "map" ? "bg-[#B86EFF]" : ""}`}
+              className={monitoringView === "map" ? "bg-[#B86EFF]" : ""}
               onClick={() => setMonitoringView("map")}
             >
               <MapPin className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
-              className={`${monitoringView === "table" ? "bg-[#B86EFF]" : ""}`}
+              className={monitoringView === "table" ? "bg-[#B86EFF]" : ""}
               onClick={() => setMonitoringView("table")}
             >
               <PiggyBank className="w-4 h-4" />
@@ -113,16 +116,15 @@ export default function Dashboard() {
         </div>
         <CardDescription>
           {monitoringView === "map"
-            ? "Geographic distribution of monitored pigs"
+            ? "Farm distribution of monitored pigs"
             : "Detailed health data"}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {monitoringView === "map" ? (
           <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
-            {/* Your existing map view */}
-            {filteredPigData.map((pig) => (
-              <PigStatus key={pig.id} {...pig} />
+            {pigData.map((pig, i: number) => (
+              <PigStatus key={i} {...pig} />
             ))}
           </div>
         ) : (
@@ -138,21 +140,21 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPigData.map((pig: any) => (
+                {pigData.map((pig) => (
                   <TableRow key={pig.id}>
-                    <TableCell>{pig.id}</TableCell>
-                    <TableCell>{`${pig.region} - ${pig.subRegion}`}</TableCell>
+                    <TableCell>{pig.rfid}</TableCell>
+                    <TableCell>{`${pig.region} ${
+                      pig.subRegion ? `- ${pig.subRegion}` : ""
+                    }`}</TableCell>
                     <TableCell>{pig.temperature?.toFixed(1)}°C</TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center gap-1 ${
-                          pig.status === "fever"
-                            ? "text-red-500"
-                            : "text-green-500"
+                          pig.hasFever ? "text-red-500" : "text-green-500"
                         }`}
                       >
                         <ThermometerSun className="w-4 h-4" />
-                        {pig.status}
+                        {pig.hasFever ? "Fever" : "Normal"}
                       </span>
                     </TableCell>
                     <TableCell>{pig.lastUpdate}</TableCell>
@@ -166,71 +168,47 @@ export default function Dashboard() {
     </Card>
   );
 
+  // Regional View Component
+  const RegionalView = () => (
+    <Card className="bg-[#1C1C1E] border-gray-800">
+      <CardHeader>
+        <CardTitle>Live Monitoring</CardTitle>
+        <CardDescription>Regional overview of monitored pigs</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
+          {pigData.map((pig, i: number) => (
+            <PigStatus key={i} {...pig} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-[#0d0e14] text-white p-4 md:p-6">
-      <NavBar
-        setIsDetailedView={setIsDetailedView}
-        isDetailedView={isDetailedView}
-      />
+      <NavBar onViewChange={setIsDetailedView} />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {/* Stats Cards */}
-        <Card className="bg-[#1C1C1E] border-gray-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Monitored
-            </CardTitle>
-            <PiggyBank className="w-4 h-4 text-[#B86EFF]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">247</div>
-            <p className="text-xs text-gray-400">+2 from yesterday</p>
-          </CardContent>
-        </Card>
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <Card className="bg-[#1C1C1E] border-gray-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">
-              Current Alerts
-            </CardTitle>
-            <BadgeAlert className="w-4 h-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-500">3</div>
-            <p className="text-xs text-gray-400">Requires attention</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#1C1C1E] border-gray-800">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Health Index</CardTitle>
-            <ThermometerSun className="w-4 h-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">98.8%</div>
-            <p className="text-xs text-gray-400">Last 24 hours</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Main Monitoring Area */}
-      {isDetailedView ? (
-        renderDetailedView()
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-[#B86EFF] border-t-transparent rounded-full animate-spin" />
+        </div>
       ) : (
-        <Card className="bg-[#1C1C1E] border-gray-800">
-          <CardHeader>
-            <CardTitle>Live Monitoring</CardTitle>
-            <CardDescription>
-              Each icon represents a monitored pig
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
-              {/* display mapped pig status here for all pigs in the farm/ aggregated regions */}
-              {/* <PigStatus key={pig.id} {...pig} />  */}
-            </div>
-          </CardContent>
-        </Card>
+        <>
+          <StatsCards />
+          {isAuthenticated && currentFarmId && isDetailedView ? (
+            <DetailedView />
+          ) : (
+            <RegionalView />
+          )}
+        </>
       )}
     </div>
   );
