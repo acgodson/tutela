@@ -3,6 +3,7 @@ import { baseProcedure, createTRPCRouter } from "../init";
 import { customAlphabet } from "nanoid";
 import { getAccountIdFromEvmAddress, sendMinimalHbar } from "@/evm/queries";
 import { HealthStatusMessage, PigMessage } from "@/utils/dashboardTypes";
+import { fetchQueryResponse } from "@/utils/openAI";
 
 const generateRFID = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 8);
 
@@ -214,7 +215,6 @@ export const appRouter = createTRPCRouter({
       }
     }),
 
-    
   getRegionalOverview: baseProcedure
     .input(
       z.object({
@@ -300,6 +300,27 @@ export const appRouter = createTRPCRouter({
       } catch (error) {
         throw new Error("Failed to fetch regional overview");
       }
+    }),
+
+  getAIResponse: baseProcedure
+    .input(
+      z.object({
+        prompt: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      // Prepare farm/region context
+      const context = ``;
+
+      // Call AI API
+      const apiKey = process.env.OPENAI_KEY;
+      if (!apiKey) {
+        throw new Error("API key is not set");
+      }
+
+      const result = await fetchQueryResponse(input.prompt, apiKey, context);
+      console.log("this is the result", result);
+      return { content: result };
     }),
 });
 

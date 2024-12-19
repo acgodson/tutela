@@ -1,3 +1,4 @@
+
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -22,17 +23,6 @@ export function truncateAddress(
   return `${address.slice(0, startLength)}...${address.slice(-endLength)}`;
 }
 
-export const getFirstName = (name: string) => {
-  let firstName = "";
-
-  for (const char of name) {
-    if (char === " ") return firstName;
-    firstName += char;
-  }
-
-  return firstName;
-};
-
 export const wait5Seconds = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -40,5 +30,4 @@ export const wait5Seconds = () => {
     }, 5000);
   });
 };
-
 

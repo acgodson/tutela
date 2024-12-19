@@ -24,6 +24,7 @@ import { AlertCircle } from "lucide-react";
 import PigStatus from "@/components/molecules/PigStatus";
 import { useEthContext } from "@/contexts/EthContext";
 import { usePigManagement } from "@/hooks/usePigManagement";
+import LiveChat from "@/components/organisms/LiveChat";
 
 export default function Dashboard() {
   const [isDetailedView, setIsDetailedView] = React.useState(false);
@@ -225,6 +226,8 @@ export default function Dashboard() {
           ) : (
             <RegionalView />
           )}
+
+          <LiveChat />
         </>
       )}
     </div>

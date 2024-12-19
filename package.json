@@ -43,7 +43,11 @@
     "@privy-io/react-auth": "^1.66.2",
     "@privy-io/wagmi": "^0.2.12",
     "@hashgraph/sdk": "^2.45.0",
-    "axios": "^1.6.8"
+    "axios": "^1.6.8",
+    "@langchain/community": "^0.0.35",
+    "@langchain/core": "^0.1.43",
+    "@langchain/openai": "^0.0.18",
+    "langchain": "^0.1.37"
   },
   "devDependencies": {
     "@types/node": "^20",
