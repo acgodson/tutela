@@ -32,8 +32,10 @@ export default function Dashboard() {
   );
 
   const { selectedRegion, currentFarmId } = useEthContext();
+
+  const shouldShowFarmView = currentFarmId && isDetailedView;
   const { pigs, stats, isLoading, error, refetchPigs } = usePigManagement(
-    currentFarmId || selectedRegion.topicId
+    shouldShowFarmView ? currentFarmId : null
   );
 
   // Stats Cards Component
@@ -116,14 +118,20 @@ export default function Dashboard() {
       <CardContent>
         {monitoringView === "map" ? (
           <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
-            {pigs.map((pig: any) => (
+            {pigs.map((pig, i) => (
               <PigStatus
-                key={pig.pigTopicId}
-                x={Math.random() * 80 + 10} // We'll need to add positioning logic
+                key={`${pig.pigTopicId}${i}`}
+                x={Math.random() * 80 + 10}
                 y={Math.random() * 80 + 10}
-                hasFever={pig.latestStatus?.hasFever || false}
-                lastUpdate={pig.latestStatus?.timestamp || pig.timestamp}
-                isNew={!pig.latestStatus}
+                hasFever={
+                  currentFarmId ? pig.latestStatus?.hasFever : pig.hasFever
+                }
+                lastUpdate={
+                  currentFarmId
+                    ? pig.latestStatus?.timestamp || pig.timestamp
+                    : pig.lastUpdate
+                }
+                isNew={currentFarmId ? !pig.latestStatus : false}
               />
             ))}
           </div>

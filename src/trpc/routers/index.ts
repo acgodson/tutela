@@ -213,6 +213,94 @@ export const appRouter = createTRPCRouter({
         throw new Error("Failed to fetch pigs data");
       }
     }),
+
+    
+  getRegionalOverview: baseProcedure
+    .input(
+      z.object({
+        regionId: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        // Step 1: Get all farms in the region
+        const regionResponse = await fetch(
+          `https://us-central1-chow-live.cloudfunctions.net/getTopicMessages?topicId=${input.regionId}`
+        );
+
+        if (!regionResponse.ok) throw new Error("Failed to fetch region data");
+        const regionData = await regionResponse.json();
+
+        // Extract all farm IDs
+        const farmIds = regionData.messages.map(
+          (msg: any) => msg.content.farmTopicId
+        );
+
+        // Step 2: Fetch aggregated data for all farms (parallel)
+        const farmDataPromises = farmIds.map(async (farmId: string) => {
+          const farmResponse = await fetch(
+            `https://us-central1-chow-live.cloudfunctions.net/getTopicMessages?topicId=${farmId}`
+          );
+
+          if (!farmResponse.ok) return null;
+          const farmData = await farmResponse.json();
+
+          // Only get pig IDs and their latest status
+          const pigs = farmData.messages
+            .filter(
+              (msg: PigMessage) => msg.content.pigTopicId && msg.content.rfid
+            )
+            .map((msg: PigMessage) => ({
+              pigTopicId: msg.content.pigTopicId,
+              rfid: msg.content.rfid,
+              farmId,
+              timestamp: msg.content.timestamp,
+            }));
+
+          return pigs;
+        });
+
+        const farmsData = (await Promise.all(farmDataPromises))
+          .filter(Boolean)
+          .flat();
+
+        // Step 3: Quick health check (only most recent status)
+        const healthChecks = farmsData.map(async (pig) => {
+          const statusResponse = await fetch(
+            `https://us-central1-chow-live.cloudfunctions.net/getTopicMessages?topicId=${pig.pigTopicId}`
+          );
+
+          if (!statusResponse.ok) return { ...pig, hasFever: false };
+
+          const statusData = await statusResponse.json();
+          const latestStatus = statusData.messages[0]?.content; // Only get the most recent
+
+          return {
+            ...pig,
+            hasFever: latestStatus?.hasFever || false,
+            temperature: latestStatus?.temperature,
+            lastUpdate: latestStatus?.timestamp || pig.timestamp,
+          };
+        });
+
+        const pigsWithStatus = await Promise.all(healthChecks);
+
+        // Aggregate stats
+        const stats = {
+          totalPigs: pigsWithStatus.length,
+          sickPigs: pigsWithStatus.filter((pig) => pig.hasFever).length,
+          healthyPigs: pigsWithStatus.filter((pig) => !pig.hasFever).length,
+          farmCount: farmIds.length,
+        };
+
+        return {
+          pigs: pigsWithStatus,
+          stats,
+        };
+      } catch (error) {
+        throw new Error("Failed to fetch regional overview");
+      }
+    }),
 });
 
 export type AppRouter = typeof appRouter;

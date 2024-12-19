@@ -1,17 +1,17 @@
 // types/dashboard.ts
-export interface PigData {
-  id: string;
-  rfid: string;
-  x: number;
-  y: number;
-  hasFever: boolean;
-  temperature?: number;
-  lastUpdate: string;
-  region: string;
-  farmerId: string;
-  status?: "normal" | "fever";
-  subRegion?: string;
-}
+// export interface PigData {
+//   id: string;
+//   rfid: string;
+//   x: number;
+//   y: number;
+//   hasFever: boolean;
+//   temperature?: number;
+//   lastUpdate: string;
+//   region: string;
+//   farmerId: string;
+//   status?: "normal" | "fever";
+//   subRegion?: string;
+// }
 
 export interface DashboardStats {
   totalMonitored: number;
@@ -39,6 +39,37 @@ export interface HealthStatusMessage {
     hasFever: boolean;
     temperature?: number;
     timestamp: string;
+  };
+}
+
+export interface PigStatus {
+  hasFever: boolean;
+  temperature?: number;
+  timestamp: string;
+}
+
+export interface PigData {
+  pigTopicId: string;
+  rfid: string;
+  farmId?: string;
+  timestamp: string;
+  latestStatus: PigStatus | null;
+}
+
+export interface DashboardStats {
+  totalMonitored: number;
+  currentAlerts: number;
+  healthIndex: number;
+  dailyChange?: number;
+}
+
+export interface RegionalOverviewData {
+  pigs: PigData[];
+  stats: {
+    totalPigs: number;
+    healthyPigs: number;
+    sickPigs: number;
+    farmCount: number;
   };
 }
 

@@ -126,7 +126,7 @@ export default function AuthPage() {
                     <SelectValue placeholder="Select region" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#1C1C1E] pt-2 pb-4 border-[#1C1C1E] cursor-pointer">
-                    {regions.map((region) => (
+                    {regions.map((region: any) => (
                       <SelectItem key={region.topicId} value={region.topicId}>
                         {region.name} ({region.topicId})
                       </SelectItem>

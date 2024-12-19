@@ -1,23 +1,54 @@
+//usepigmanagement.tsx
+
+import { useEthContext } from "@/contexts/EthContext";
 import { trpc } from "@/trpc/client";
 import { useState } from "react";
 
-export const usePigManagement = (farmId: string) => {
+export const usePigManagement = (farmId: string | null) => {
   const [rfid, setRfid] = useState("");
   const [error, setError] = useState("");
+  const { selectedRegion } = useEthContext();
 
-  // Fetch pigs data
-  const {
-    data: pigs = [] as any,
-    isLoading: isLoadingPigs,
-    error: fetchError,
-    refetch: refetchPigs,
-  } = trpc.getPigs.useQuery(
-    { farmTopicId: farmId },
+  // Farm-specific data
+  const farmQuery = trpc.getPigs.useQuery(
+    { farmTopicId: farmId! },
     {
       enabled: !!farmId,
       refetchInterval: 30000, // Refetch every 30 seconds
     }
   );
+
+  // Regional overview
+  const regionalQuery = trpc.getRegionalOverview.useQuery(
+    { regionId: selectedRegion.topicId },
+    {
+      enabled: !farmId,
+      refetchInterval: 60000,
+    }
+  );
+
+  const currentQuery = farmId ? farmQuery : regionalQuery;
+
+  const pigs = farmId
+    ? farmQuery.data || [] // Farm view returns array directly
+    : regionalQuery.data?.pigs || [];
+
+  // Compute combined stats
+  const stats = farmId
+    ? {
+        totalPigs: farmQuery.data?.length || 0,
+        healthyPigs:
+          farmQuery.data?.filter((pig) => !pig.latestStatus?.hasFever).length ||
+          0,
+        sickPigs:
+          farmQuery.data?.filter((pig) => pig.latestStatus?.hasFever).length ||
+          0,
+      }
+    : {
+        totalPigs: regionalQuery.data?.stats.totalPigs || 0,
+        healthyPigs: regionalQuery.data?.stats.healthyPigs || 0,
+        sickPigs: regionalQuery.data?.stats.sickPigs || 0,
+      };
 
   // Register new pig
   const { mutateAsync: registerPig, isPending: isRegistering } =
@@ -42,7 +73,7 @@ export const usePigManagement = (farmId: string) => {
     try {
       await registerPig({
         rfid,
-        farmTopicId: farmId,
+        farmTopicId: farmId!,
       });
       setRfid("");
       return true;
@@ -60,18 +91,7 @@ export const usePigManagement = (farmId: string) => {
     }
   };
 
-  // Get statistical data
-  const stats = {
-    totalPigs: pigs.length,
-    healthyPigs: pigs.filter((pig: any) => !pig.latestStatus?.hasFever).length,
-    sickPigs: pigs.filter((pig: any) => pig.latestStatus?.hasFever).length,
-    averageTemperature:
-      pigs.reduce((acc: any, pig: any) => {
-        return pig.latestStatus?.temperature
-          ? acc + pig.latestStatus.temperature
-          : acc;
-      }, 0) / pigs.length || 0,
-  };
+
 
   return {
     // Registration related
@@ -84,12 +104,14 @@ export const usePigManagement = (farmId: string) => {
     generateRFID,
 
     // Fetch related
+
     pigs,
-    isLoadingPigs,
-    refetchPigs,
     stats,
+    isLoadingPigs: currentQuery.isLoading,
+    refetchPigs: currentQuery.refetch,
+    farmCount: regionalQuery.data?.stats.farmCount,
 
     // Combined loading state
-    isLoading: isLoadingPigs || isRegistering,
+    isLoading: currentQuery.isLoading || isRegistering,
   };
 };

@@ -41,37 +41,4 @@ export const wait5Seconds = () => {
   });
 };
 
-// types.ts
-export interface PigData {
-  id: string;
-  rfid: string;
-  region: string;
-  subRegion: string;
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  health: {
-    temperature: number;
-    lastReading: string;
-    status: "healthy" | "fever" | "warning";
-  };
-  metadata: {
-    registeredDate: string;
-    age?: number;
-    weight?: number;
-    farmerId: string;
-  };
-}
 
-export interface RegionData {
-  id: string;
-  topicId: string;
-  name: string;
-  coordinates: {
-    centerLat: number;
-    centerLng: number;
-    zoomLevel: number;
-  };
-  subRegions: string[];
-}
