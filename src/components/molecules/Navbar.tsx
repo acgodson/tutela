@@ -15,7 +15,7 @@ import {
 import { useViewMode } from "@/hooks/useViewMode";
 import { africanRegions } from "@/utils/data";
 import { AddPigDialog } from "./AddPigDialog";
-import { useEthContext } from "@/evm/EthContext";
+import { useEthContext } from "@/contexts/EthContext";
 
 interface NavBarProps {
   onViewChange: (isDetailed: boolean) => void;

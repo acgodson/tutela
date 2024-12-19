@@ -25,3 +25,27 @@ export interface ViewProps {
   isLoading?: boolean;
   error?: string;
 }
+
+export interface PigMessage {
+  content: {
+    pigTopicId: string;
+    rfid: string;
+    timestamp: string;
+  };
+}
+
+export interface HealthStatusMessage {
+  content: {
+    hasFever: boolean;
+    temperature?: number;
+    timestamp: string;
+  };
+}
+
+export interface PigStatusProps {
+  x: number;
+  y: number;
+  hasFever: boolean;
+  lastUpdate: string;
+  isNew?: boolean;
+}

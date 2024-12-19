@@ -1,7 +1,7 @@
 // hooks/useDashboardData.ts
 import { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useEthContext } from "@/evm/EthContext";
+import { useEthContext } from "@/contexts/EthContext";
 import { PigData, DashboardStats } from "@/utils/dashboardTypes";
 
 export const useDashboardData = (regionId: string) => {

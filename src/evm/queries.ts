@@ -52,9 +52,9 @@ export async function balanceCheckerFcn(acId: any, tkId: any, client: any) {
 export const sendMinimalHbar = async (recipientAddress: string) => {
   //@ts-ignore
   const client = Client.forNetwork("testnet").setOperator(
-    AccountId.fromString(process.env.NEXT_PUBLIC_ACCOUNT_ID as string),
+    AccountId.fromString(process.env.ACCOUNT_ID as string),
     PrivateKey.fromStringECDSA(
-      process.env.NEXT_PUBLIC_ACCOUNT_PRIVATE_KEY as string
+      process.env.ACCOUNT_PRIVATE_KEY as string
     )
   );
 

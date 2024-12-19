@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useEthContext } from "@/evm/EthContext";
+import { useEthContext } from "@/contexts/EthContext";
 import {
   Card,
   CardHeader,
@@ -42,23 +42,15 @@ export default function AuthPage() {
   } = useHederaAddress(user?.wallet?.address);
 
   const {
-    farms,
     selectedFarm,
     setSelectedFarm,
     isFarmLoading,
     error: farmError,
-    fetchFarms,
+    farms,
     registerFarm,
   } = useFarmManagement(hederaAddress);
 
   const { regionId, handleRegionChange, regions } = useRegionManagement();
-
-  // Effect to fetch farms when dependencies change
-  React.useEffect(() => {
-    if (authenticated && regionId && hederaAddress) {
-      fetchFarms(regionId);
-    }
-  }, [authenticated, regionId, hederaAddress]);
 
   const handleRegionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,7 +175,7 @@ export default function AuthPage() {
                 <Alert variant="destructive">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    {hederaError || farmError}
+                    {hederaError || farmError?.message}
                   </AlertDescription>
                 </Alert>
               )}

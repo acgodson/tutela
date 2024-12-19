@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useEthContext } from "@/evm/EthContext";
+import { useEthContext } from "@/contexts/EthContext";
 
 export const useViewMode = () => {
   const { authenticated } = usePrivy();

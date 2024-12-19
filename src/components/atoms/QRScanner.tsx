@@ -1,17 +1,24 @@
+// components/atoms/QRScanner.tsx
 import { QrCode } from "lucide-react";
+import { Button } from "@/components/atoms";
 
-const QRScanner = ({ onScan }: { onScan: (data: string) => void }) => {
-  // TODO: Implement QR scanning logic here
-  // currently generenate random rfid on scan for web testers
+interface QRScannerProps {
+  onScan: (data: string) => void;
+  onGenerate: () => void;
+}
+
+const QRScanner: React.FC<QRScannerProps> = ({ onScan, onGenerate }) => {
   return (
-    <button
-      onClick={() => onScan("SAMPLE-RFID-123")}
-      className="p-2 hover:bg-[#2C2C2E] rounded-full transition-colors"
+    <Button
+      variant="ghost"
+      onClick={onGenerate} // We'll use generate instead of scan for now
+      className="h-14 px-3 hover:bg-[#2C2C2E] hover:text-[#B86EFF] transition-colors"
+      title="Generate RFID"
+      type="button"
     >
       <QrCode className="w-6 h-6" />
-    </button>
+    </Button>
   );
 };
 
-
-export default QRScanner
+export default QRScanner;

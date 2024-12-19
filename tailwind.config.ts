@@ -12,6 +12,21 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
       },
+      keyframes: {
+        "slide-down": {
+          "0%": { transform: "translateY(-100%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        check: {
+          "0%": { transform: "scale(0)" },
+          "50%": { transform: "scale(1.2)" },
+          "100%": { transform: "scale(1)" },
+        },
+      },
+      animation: {
+        "slide-down": "slide-down 0.5s ease-out forwards",
+        check: "check 0.5s ease-out forwards",
+      },
     },
   },
   plugins: [],

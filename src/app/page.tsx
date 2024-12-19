@@ -19,12 +19,11 @@ import {
   TableRow,
 } from "@/components/atoms/table";
 import NavBar from "@/components/molecules/Navbar";
-import { useDashboardData } from "@/hooks/useDashboardData";
-
 import { Alert, AlertDescription } from "@/components/atoms/alert";
 import { AlertCircle } from "lucide-react";
 import PigStatus from "@/components/molecules/PigStatus";
-import { useEthContext } from "@/evm/EthContext";
+import { useEthContext } from "@/contexts/EthContext";
+import { usePigManagement } from "@/hooks/usePigManagement";
 
 export default function Dashboard() {
   const [isDetailedView, setIsDetailedView] = React.useState(false);
@@ -33,9 +32,9 @@ export default function Dashboard() {
   );
 
   const { selectedRegion, currentFarmId } = useEthContext();
-
-  const { pigData, stats, isLoading, error, isAuthenticated } =
-    useDashboardData(selectedRegion.topicId);
+  const { pigs, stats, isLoading, error, refetchPigs } = usePigManagement(
+    currentFarmId || selectedRegion.topicId
+  );
 
   // Stats Cards Component
   const StatsCards = () => (
@@ -46,14 +45,8 @@ export default function Dashboard() {
           <PiggyBank className="w-4 h-4 text-[#B86EFF]" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats.totalMonitored}</div>
-          <p className="text-xs text-gray-400">
-            0
-            {/* {stats??.dailyChange > 0
-              ? `+${stats.dailyChange}`
-              : stats.dailyChange}{" "} */}
-            from yesterday
-          </p>
+          <div className="text-2xl font-bold">{stats.totalPigs}</div>
+          <p className="text-xs text-gray-400">{0} from yesterday</p>
         </CardContent>
       </Card>
 
@@ -67,7 +60,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-red-500">
-              {stats.currentAlerts}
+              {stats.sickPigs}
             </div>
             <p className="text-xs text-gray-400">Requires attention</p>
           </CardContent>
@@ -82,7 +75,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">
-              {stats.healthIndex.toFixed(1)}%
+              {((stats.healthyPigs / stats.totalPigs) * 100).toFixed(1)}%
             </div>
             <p className="text-xs text-gray-400">Last 24 hours</p>
           </CardContent>
@@ -123,8 +116,15 @@ export default function Dashboard() {
       <CardContent>
         {monitoringView === "map" ? (
           <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
-            {pigData.map((pig, i: number) => (
-              <PigStatus key={i} {...pig} />
+            {pigs.map((pig: any) => (
+              <PigStatus
+                key={pig.pigTopicId}
+                x={Math.random() * 80 + 10} // We'll need to add positioning logic
+                y={Math.random() * 80 + 10}
+                hasFever={pig.latestStatus?.hasFever || false}
+                lastUpdate={pig.latestStatus?.timestamp || pig.timestamp}
+                isNew={!pig.latestStatus}
+              />
             ))}
           </div>
         ) : (
@@ -132,32 +132,34 @@ export default function Dashboard() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Region</TableHead>
+                  <TableHead>RFID</TableHead>
                   <TableHead>Temperature</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Last Update</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pigData.map((pig) => (
-                  <TableRow key={pig.id}>
+                {pigs.map((pig: any) => (
+                  <TableRow key={pig.pigTopicId}>
                     <TableCell>{pig.rfid}</TableCell>
-                    <TableCell>{`${pig.region} ${
-                      pig.subRegion ? `- ${pig.subRegion}` : ""
-                    }`}</TableCell>
-                    <TableCell>{pig.temperature?.toFixed(1)}°C</TableCell>
+                    <TableCell>
+                      {pig.latestStatus?.temperature?.toFixed(1)}°C
+                    </TableCell>
                     <TableCell>
                       <span
                         className={`inline-flex items-center gap-1 ${
-                          pig.hasFever ? "text-red-500" : "text-green-500"
+                          pig.latestStatus?.hasFever
+                            ? "text-red-500"
+                            : "text-green-500"
                         }`}
                       >
                         <ThermometerSun className="w-4 h-4" />
-                        {pig.hasFever ? "Fever" : "Normal"}
+                        {pig.latestStatus?.hasFever ? "Fever" : "Normal"}
                       </span>
                     </TableCell>
-                    <TableCell>{pig.lastUpdate}</TableCell>
+                    <TableCell>
+                      {pig.latestStatus?.timestamp || pig.timestamp}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -177,8 +179,15 @@ export default function Dashboard() {
       </CardHeader>
       <CardContent>
         <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
-          {pigData.map((pig, i: number) => (
-            <PigStatus key={i} {...pig} />
+          {pigs.map((pig: any) => (
+            <PigStatus
+              key={pig.pigTopicId}
+              x={Math.random() * 80 + 10} // We'll need to add positioning logic
+              y={Math.random() * 80 + 10}
+              hasFever={pig.latestStatus?.hasFever || false}
+              lastUpdate={pig.latestStatus?.timestamp || pig.timestamp}
+              isNew={!pig.latestStatus}
+            />
           ))}
         </div>
       </CardContent>
@@ -203,7 +212,7 @@ export default function Dashboard() {
       ) : (
         <>
           <StatsCards />
-          {isAuthenticated && currentFarmId && isDetailedView ? (
+          {currentFarmId && isDetailedView ? (
             <DetailedView />
           ) : (
             <RegionalView />
