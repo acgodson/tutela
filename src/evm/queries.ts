@@ -5,6 +5,9 @@ import {
   EntityIdHelper,
   TransferTransaction,
   Hbar,
+  AccountId,
+  PrivateKey,
+  Client,
 } from "@hashgraph/sdk";
 import axios from "axios";
 import { keccak256, toHex } from "viem";
@@ -44,6 +47,57 @@ export async function balanceCheckerFcn(acId: any, tkId: any, client: any) {
     );
   }
 }
+
+// Utility function to send minimal HBAR
+export const sendMinimalHbar = async (recipientAddress: string) => {
+  //@ts-ignore
+  const client = Client.forNetwork("testnet").setOperator(
+    AccountId.fromString(process.env.NEXT_PUBLIC_ACCOUNT_ID as string),
+    PrivateKey.fromStringECDSA(
+      process.env.NEXT_PUBLIC_ACCOUNT_PRIVATE_KEY as string
+    )
+  );
+
+  const transferTx = await new TransferTransaction()
+    .addHbarTransfer(
+      process.env.NEXT_PUBLIC_ACCOUNT_ID as string,
+      Hbar.fromTinybars(-1000000)
+    ) // 0.01 HBAR
+    .addHbarTransfer(recipientAddress, Hbar.fromTinybars(1000000))
+    .execute(client);
+
+  await transferTx.getReceipt(client);
+  return true;
+};
+
+export const convertToHederaAddress = async (evmAddress: string) => {
+  try {
+    // Try to get account balance first
+    //@ts-ignore
+    const client = Client.forNetwork("testnet").setOperator(
+      AccountId.fromString(process.env.NEXT_PUBLIC_ACCOUNT_ID as string),
+      PrivateKey.fromStringECDSA(
+        process.env.NEXT_PUBLIC_ACCOUNT_PRIVATE_KEY as string
+      )
+    );
+
+    try {
+      const accountId = AccountId.fromEvmAddress(0, 0, evmAddress);
+      await new AccountBalanceQuery().setAccountId(accountId).execute(client);
+
+      return accountId.toString();
+    } catch (error) {
+      console.log("Account needs initial HBAR");
+      // Send minimal HBAR
+      await sendMinimalHbar(evmAddress);
+      // Try conversion again after sending HBAR
+      const accountId = AccountId.fromEvmAddress(0, 0, evmAddress);
+      return accountId.toString();
+    }
+  } catch (error) {
+    console.error("Failed to convert address:", error);
+  }
+};
 
 export function convert(hederaNativeAddress: string) {
   const { shard, realm, num } = EntityIdHelper.fromString(hederaNativeAddress);
@@ -153,4 +207,3 @@ export async function trfHBar(senderId: any, senderKey: any, client: any) {
 
   return [transactionReceipt.status.toString()];
 }
-

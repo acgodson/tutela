@@ -12,7 +12,7 @@ const queryClient = new QueryClient();
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <PrivyProvider
-      appId={"cm038nlk701xf9wubh1ce7oki"}
+      appId={"cm4v2jplr043zdvpuzisf6jfr"}
       config={privyConfig as PrivyClientConfig}
     >
       <QueryClientProvider client={queryClient}>

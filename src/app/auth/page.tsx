@@ -1,198 +1,232 @@
 "use client";
-
 import React from "react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useEthContext } from "@/evm/EthContext";
 import {
   Card,
   CardHeader,
-  CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from "@/components/atoms/card";
 import { Button, Input } from "@/components/atoms";
 import { Label } from "@/components/atoms/label";
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/components/atoms/tabs";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/atoms/select";
+import { AlertCircle, Building, Plus, Route } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/atoms/alert";
-import { AlertCircle, Home } from "lucide-react";
-
-const LoadingOverlay = () => {
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="relative">
-        <div className="w-16 h-16 border-4 border-[#B86EFF]/30 rounded-full animate-pulse" />
-        <div className="absolute top-0 left-0 w-16 h-16 border-4 border-[#B86EFF] border-t-transparent rounded-full animate-spin" />
-      </div>
-    </div>
-  );
-};
+import AddressDisplay from "@/components/molecules/AddressDisplay";
+import { useRouter } from "next/navigation";
+import { RegisterFarmDialog } from "@/components/molecules/RegisterFarmDialog";
+import { useFarmManagement } from "@/hooks/useFarmManagement";
+import { useRegionManagement } from "@/hooks/useRegionManagement";
+import { useHederaAddress } from "@/hooks/useHederaAddress";
+import LoadingOverlay from "@/components/atoms/LoadingOverlay";
 
 export default function AuthPage() {
+  const router = useRouter();
+  const { authenticated, user } = usePrivy();
+  const { handleLogin } = useEthContext();
   const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState("");
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
-  const handleSubmit = async (e: any) => {
+  // Custom hooks
+  const {
+    hederaAddress,
+    isNewAccount,
+    error: hederaError,
+  } = useHederaAddress(user?.wallet?.address);
+
+  const {
+    farms,
+    selectedFarm,
+    setSelectedFarm,
+    isFarmLoading,
+    error: farmError,
+    fetchFarms,
+    registerFarm,
+  } = useFarmManagement(hederaAddress);
+
+  const { regionId, handleRegionChange, regions } = useRegionManagement();
+
+  // Effect to fetch farms when dependencies change
+  React.useEffect(() => {
+    if (authenticated && regionId && hederaAddress) {
+      fetchFarms(regionId);
+    }
+  }, [authenticated, regionId, hederaAddress]);
+
+  const handleRegionSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
+    if (!authenticated) {
+      await handleLogin();
+    }
+  };
 
+  const handleFarmSelect = (farmId: string) => {
+    if (farmId === "new") {
+      setIsDialogOpen(true);
+    } else {
+      setSelectedFarm(farmId);
+    }
+  };
+
+  const handleRegisterFarm = async (formData: { farmerName: string }) => {
+    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      // Add authentication logic here
+      await registerFarm(regionId, formData.farmerName);
     } catch (err) {
-      setError("Authentication failed. Please try again.");
+      console.error(err);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCopyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
   };
 
   return (
     <>
       {isLoading && <LoadingOverlay />}
 
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#0d0e14] flex items-center justify-center p-4">
         <Card className="w-full max-w-md border-0 bg-[#0A0B0F] shadow-2xl">
           <CardHeader className="space-y-1 pb-2">
             <div className="flex items-center gap-2 mb-4">
-              <Home className="w-8 h-8 text-[#B86EFF]" />
+              <Building className="w-8 h-8 text-[#B86EFF]" />
               <h2 className="text-3xl font-bold text-[#B86EFF]">FarmMonitor</h2>
             </div>
             <CardDescription className="text-gray-400 text-lg">
               Monitor your farm's health status in real-time
             </CardDescription>
           </CardHeader>
+
           <CardContent className="pt-4">
-            <Tabs defaultValue="login" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-8 bg-transparent border-b border-gray-800">
-                <TabsTrigger
-                  value="login"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-[#B86EFF] data-[state=active]:text-white data-[state=active]:bg-transparent bg-transparent text-lg py-4 rounded-none"
+            {authenticated && user?.wallet?.address && (
+              <AddressDisplay
+                evmAddress={user.wallet.address}
+                hederaAddress={hederaAddress}
+                onCopy={handleCopyAddress}
+              />
+            )}
+
+            {isNewAccount && (
+              <Alert className="mb-4 bg-yellow-500/10 border-yellow-500/50">
+                <AlertCircle className="h-4 w-4 text-yellow-500" />
+                <AlertDescription className="text-yellow-500">
+                  Setting up your Hedera account with initial HBAR...
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <form onSubmit={handleRegionSubmit} className="space-y-6">
+              <div className="space-y-3">
+                <Label htmlFor="region" className="text-lg text-gray-300">
+                  Region ID
+                </Label>
+                <Select value={regionId} onValueChange={handleRegionChange}>
+                  <SelectTrigger className="bg-[#1C1C1E] border-gray-800 h-45 focus:border-[#B86EFF] w-full">
+                    <SelectValue placeholder="Select region" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#1C1C1E] pt-2 pb-4 border-[#1C1C1E] cursor-pointer">
+                    {regions.map((region) => (
+                      <SelectItem key={region.topicId} value={region.topicId}>
+                        {region.name} ({region.topicId})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {regionId && hederaAddress && (
+                <div className="space-y-3">
+                  <Label htmlFor="farm" className="text-lg text-gray-300">
+                    Select Farm
+                  </Label>
+                  <Select onValueChange={handleFarmSelect} value={selectedFarm}>
+                    <SelectTrigger className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white">
+                      {isFarmLoading ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-[#B86EFF] border-t-transparent rounded-full animate-spin" />
+                          <span>Loading farms...</span>
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Select a farm" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#0A0B0F] border-gray-800">
+                      {farms.map((farm: any) => (
+                        <SelectItem
+                          key={farm.farmTopicId}
+                          value={farm.farmTopicId}
+                        >
+                          {farm.farmerName} ({farm.farmTopicId})
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="new" className="text-[#B86EFF]">
+                        <div className="flex items-center cursor-pointer">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add New Farm
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {(hederaError || farmError) && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    {hederaError || farmError}
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {!authenticated && (
+                <Button
+                  type="submit"
+                  className="w-full h-14 bg-[#B86EFF] hover:bg-[#A54EFF] text-white text-lg font-medium"
                 >
-                  Login
-                </TabsTrigger>
-                <TabsTrigger
-                  value="register"
-                  className="data-[state=active]:border-b-2 data-[state=active]:border-[#B86EFF] data-[state=active]:text-white data-[state=active]:bg-transparent bg-transparent text-lg py-4 rounded-none"
-                >
-                  Register
-                </TabsTrigger>
-              </TabsList>
+                  Connect Wallet
+                </Button>
+              )}
+            </form>
 
-              <TabsContent value="login">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="email" className="text-lg text-gray-300">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="name@example.com"
-                      required
-                      className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white"
-                    />
+            {hederaAddress && selectedFarm && (
+              <Button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem("currentFarm", selectedFarm);
+                  router.push("/");
+                }}
+                className="w-full h-14 mt-4 bg-[#B86EFF] hover:bg-[#A54EFF] text-white text-lg font-medium"
+              >
+                {isFarmLoading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Loading...</span>
                   </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="password" className="text-lg text-gray-300">
-                      Password
-                    </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white"
-                    />
-                  </div>
-
-                  {error && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                  )}
-
-                  <Button
-                    type="submit"
-                    className="w-full h-14 bg-[#B86EFF] hover:bg-[#A54EFF] text-white text-lg font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Signing in..." : "Sign in"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="register">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-3">
-                    <Label htmlFor="farmName" className="text-lg text-gray-300">
-                      Farm Name
-                    </Label>
-                    <Input
-                      id="farmName"
-                      placeholder="Your Farm's Name"
-                      required
-                      className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <Label htmlFor="region" className="text-lg text-gray-300">
-                      Region
-                    </Label>
-                    <Input
-                      id="region"
-                      placeholder="Farm Region"
-                      required
-                      className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <Label
-                      htmlFor="registerEmail"
-                      className="text-lg text-gray-300"
-                    >
-                      Email
-                    </Label>
-                    <Input
-                      id="registerEmail"
-                      type="email"
-                      placeholder="name@example.com"
-                      required
-                      className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <Label
-                      htmlFor="registerPassword"
-                      className="text-lg text-gray-300"
-                    >
-                      Password
-                    </Label>
-                    <Input
-                      id="registerPassword"
-                      type="password"
-                      required
-                      className="h-14 bg-white/5 border-gray-800 focus:border-[#B86EFF] text-white"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="w-full h-14 bg-[#B86EFF] hover:bg-[#A54EFF] text-white text-lg font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Creating account..." : "Create account"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+                ) : (
+                  "Sign into Farm"
+                )}
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      <RegisterFarmDialog
+        isOpen={isDialogOpen}
+        onClose={() => setIsDialogOpen(false)}
+        onSubmit={handleRegisterFarm}
+        regionId={regionId}
+      />
     </>
   );
 }

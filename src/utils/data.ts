@@ -3,17 +3,8 @@ import { PigData, RegionData } from ".";
 // mockData.ts
 export const africanRegions: RegionData[] = [
   {
-    id: "north-africa",
-    name: "North Africa",
-    coordinates: {
-      centerLat: 28.0339,
-      centerLng: 1.6596,
-      zoomLevel: 4,
-    },
-    subRegions: ["Morocco", "Algeria", "Tunisia", "Libya", "Egypt"],
-  },
-  {
     id: "west-africa",
+    topicId: "0.0.5287948",
     name: "West Africa",
     coordinates: {
       centerLat: 11.0367,
@@ -22,7 +13,6 @@ export const africanRegions: RegionData[] = [
     },
     subRegions: ["Nigeria", "Ghana", "Senegal", "Mali"],
   },
-  // Add more regions...
 ];
 
 export const generateMockPigData = (count: number): PigData[] => {

@@ -8,37 +8,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/atoms/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/atoms/select";
-import { Switch } from "@/components/atoms/switch";
-import { Label } from "@/components/atoms/label";
-import { Button } from "@/components/atoms/button";
-import { Input } from "@/components/atoms/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/atoms/dialog";
-import {
-  BadgeAlert,
-  PiggyBank,
-  ThermometerSun,
-  Building,
-  LogIn,
-  QrCode,
-  Plus,
-  MapPin,
-} from "lucide-react";
+import { Input, Button } from "@/components/atoms/";
 
+import { BadgeAlert, PiggyBank, ThermometerSun, MapPin } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -47,6 +19,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/atoms/table";
+import NavBar from "@/components/molecules/Navbar";
+import { usePrivy } from "@privy-io/react-auth";
 
 const PigStatus = ({ x, y, hasFever, lastUpdate, isNew = false }: any) => (
   <div
@@ -61,25 +35,8 @@ const PigStatus = ({ x, y, hasFever, lastUpdate, isNew = false }: any) => (
   </div>
 );
 
-const QRScanner = ({ onScan }: { onScan: (data: string) => void }) => {
-  // Implement QR scanning logic here
-  return (
-    <button
-      onClick={() => onScan("SAMPLE-RFID-123")}
-      className="p-2 hover:bg-[#2C2C2E] rounded-full transition-colors"
-    >
-      <QrCode className="w-6 h-6" />
-    </button>
-  );
-};
-
 export default function Dashboard() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [isRegionalView, setIsRegionalView] = React.useState(true);
-  const [selectedRegion, setSelectedRegion] = React.useState("all");
-  const [alerts, setAlerts] = React.useState([]);
-  const [newRFID, setNewRFID] = React.useState("");
-  const [open, setOpen] = React.useState(false);
+  const { user } = usePrivy();
 
   const [isDetailedView, setIsDetailedView] = React.useState(false);
   const [monitoringView, setMonitoringView] = React.useState<"map" | "table">(
@@ -126,26 +83,10 @@ export default function Dashboard() {
     },
   ];
 
-  const handleQRScan = (rfid: string) => {
-    setNewRFID(rfid);
-  };
-
   const filteredPigData = pigData.filter((pig) => {
-    if (!isAuthenticated) return true; // Show all in regional view
-    if (!isRegionalView) return pig.farmerId === "farmer1"; // Show only farmer's pigs
-    return selectedRegion === "all" || pig.region === selectedRegion;
+    if (!user) return true; // Show all in regional view
+    // it shoulf be regional by default but can be filtered down to farm is the farmer is authenticated
   });
-
-  const enhancedPigData = pigData.map((pig) => ({
-    ...pig,
-    temperature: Math.random() * 2 + 38, // Normal pig temp is around 39°C
-    status: pig.hasFever ? "fever" : "healthy",
-    subRegion: pig.region === "north" ? "Morocco" : "Kenya", // Example
-    coordinates: {
-      lat: pig.y,
-      lng: pig.x,
-    },
-  }));
 
   // Render function for detailed view
   const renderDetailedView = () => (
@@ -226,120 +167,11 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#0A0B0F] text-white p-4 md:p-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#B86EFF] flex items-center gap-2">
-            <Building className="w-6 h-6" />
-            Farm Health Monitor
-          </h1>
-          <p className="text-gray-400">Real-time health tracking system</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4">
-          {isAuthenticated ? (
-            <>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="view-toggle">Regional View</Label>
-                <Switch
-                  id="view-toggle"
-                  checked={isRegionalView}
-                  onCheckedChange={setIsRegionalView}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="detailed-view">Detailed View</Label>
-                <Switch
-                  id="detailed-view"
-                  checked={isDetailedView}
-                  onCheckedChange={setIsDetailedView}
-                />
-              </div>
-
-              {/* 
-              <div className="flex items-center gap-2">
-                <Label htmlFor="view-toggle">Regional View</Label>
-                <Switch
-                  id="view-toggle"
-                  checked={isRegionalView}
-                  onCheckedChange={setIsRegionalView}
-                />
-              </div> */}
-
-              {/* Test button outside Dialog first */}
-              <Button
-                className="bg-[#B86EFF] hover:bg-[#A54EFF]"
-                onClick={() => setOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Pig
-              </Button>
-
-              {open && (
-                <Dialog open={open} onOpenChange={setOpen}>
-                  <DialogContent className="bg-[#1C1C1E] border-gray-800">
-                    <DialogHeader>
-                      <DialogTitle>Register New Pig</DialogTitle>
-                      <DialogDescription>
-                        Enter RFID manually or scan QR code
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex gap-2 items-center">
-                      <Input
-                        value={newRFID}
-                        onChange={(e) => setNewRFID(e.target.value)}
-                        placeholder="Enter RFID"
-                        className="bg-[#2C2C2E] border-gray-700"
-                      />
-                      <QRScanner onScan={handleQRScan} />
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        variant="secondary"
-                        onClick={() => setOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        className="bg-[#B86EFF] hover:bg-[#A54EFF]"
-                        onClick={() => {
-                          // Add your registration logic here
-                          console.log("Registering RFID:", newRFID);
-                          setNewRFID(""); // Reset the input
-                          setOpen(false); // Close dialog
-                        }}
-                        disabled={!newRFID} // Disable if no RFID entered
-                      >
-                        Register
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              )}
-            </>
-          ) : (
-            <Button
-              onClick={() => setIsAuthenticated(true)}
-              className="bg-[#B86EFF] hover:bg-[#A54EFF]"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Farmer Login
-            </Button>
-          )}
-
-          <Select value={selectedRegion} onValueChange={setSelectedRegion}>
-            <SelectTrigger className="w-40 bg-[#1C1C1E] border-gray-700">
-              <SelectValue placeholder="Select region" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
-              <SelectItem value="north">North Region</SelectItem>
-              <SelectItem value="south">South Region</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#0d0e14] text-white p-4 md:p-6">
+      <NavBar
+        setIsDetailedView={setIsDetailedView}
+        isDetailedView={isDetailedView}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Stats Cards */}
@@ -382,7 +214,6 @@ export default function Dashboard() {
       </div>
 
       {/* Main Monitoring Area */}
-
       {isDetailedView ? (
         renderDetailedView()
       ) : (
@@ -395,45 +226,12 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="relative w-full h-[500px] bg-[#2C2C2E] rounded-lg">
-              {pigData
-                .filter(
-                  (pig) =>
-                    selectedRegion === "all" || pig.region === selectedRegion
-                )
-                .map((pig) => (
-                  <PigStatus key={pig.id} {...pig} />
-                ))}
+              {/* display mapped pig status here for all pigs in the farm/ aggregated regions */}
+              {/* <PigStatus key={pig.id} {...pig} />  */}
             </div>
           </CardContent>
         </Card>
       )}
-
-      {/* Alert Feed */}
-      <Card className="mt-6 bg-[#1C1C1E] border-gray-800">
-        <CardHeader>
-          <CardTitle>Recent Alerts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {alerts.length === 0 ? (
-              <p className="text-gray-400">No recent alerts</p>
-            ) : (
-              alerts.map((alert: any) => (
-                <div
-                  key={alert.id}
-                  className="flex items-center gap-2 p-3 bg-[#2C2C2E] rounded-lg"
-                >
-                  <BadgeAlert className="w-4 h-4 text-red-500" />
-                  <div>
-                    <p className="font-medium">{alert.message}</p>
-                    <p className="text-sm text-gray-400">{alert.timestamp}</p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }

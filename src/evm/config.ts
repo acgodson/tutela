@@ -10,7 +10,7 @@ export const privyConfig = {
   appearance: {
     theme: "light",
     accentColor: "#676FFF",
-    logo: `https://www.tutela.xyz/vercel.svg`,
+    logo: `https://www.tutela-8.vercel.app/vercel.svg`,
   },
   embeddedWallets: {
     createOnLogin: "all-users",

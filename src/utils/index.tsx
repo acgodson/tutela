@@ -41,8 +41,6 @@ export const wait5Seconds = () => {
   });
 };
 
-
-
 // types.ts
 export interface PigData {
   id: string;
@@ -56,7 +54,7 @@ export interface PigData {
   health: {
     temperature: number;
     lastReading: string;
-    status: 'healthy' | 'fever' | 'warning';
+    status: "healthy" | "fever" | "warning";
   };
   metadata: {
     registeredDate: string;
@@ -68,6 +66,7 @@ export interface PigData {
 
 export interface RegionData {
   id: string;
+  topicId: string;
   name: string;
   coordinates: {
     centerLat: number;
