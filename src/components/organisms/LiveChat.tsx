@@ -6,13 +6,8 @@ import QueryResponse from "../atoms/query-response";
 import { trpc } from "@/trpc/client";
 import { useEthContext } from "@/contexts/EthContext";
 import { usePrivy } from "@privy-io/react-auth";
-
-interface Message {
-  id: number;
-  text: string;
-  sender: "user" | "agent";
-  attachments?: any[];
-}
+import { useFetchContext } from "@/hooks/useFetchContext";
+import { ChainResponse, Message } from "@/utils/openAI";
 
 const LiveChat = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,6 +18,11 @@ const LiveChat = () => {
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const { selectedRegion, currentFarmId } = useEthContext();
+
+  const { contextData, isLoading: contextLoading } =
+    useFetchContext(currentFarmId);
 
   const getAIResponse = trpc.getAIResponse.useMutation();
 
@@ -46,17 +46,56 @@ const LiveChat = () => {
       setIsLoading(true);
 
       try {
-        const result = await getAIResponse.mutateAsync({
+        // First attempt without context
+        const initialResponse = await getAIResponse.mutateAsync({
           prompt: inputMessage,
+          context: null,
         });
 
-        const aiResponse: Message = {
-          id: Date.now(),
-          text: result.content || "I'm sorry, I couldn't generate a response.", // Add a fallback message
-          sender: "agent",
-        };
+        const response = initialResponse as ChainResponse;
 
-        setMessages((prev) => [...prev, aiResponse]);
+        if (response.needsContext) {
+          // If context is needed, send a pending message
+          const pendingMessage: Message = {
+            id: Date.now(),
+            text: response.content,
+            sender: "agent",
+            needsContext: true,
+            classification: response.classification,
+          };
+          setMessages((prev) => [...prev, pendingMessage]);
+
+          // Then fetch with context
+          const contextualResponse = await getAIResponse.mutateAsync({
+            prompt: inputMessage,
+            context: contextData
+              ? {
+                  summary: contextData.summary,
+                  details: contextData.details,
+                }
+              : null,
+          });
+
+          const finalResponse = contextualResponse as ChainResponse;
+
+          // Add the contextual response
+          const aiResponse: Message = {
+            id: Date.now(),
+            text: finalResponse.content,
+            sender: "agent",
+            classification: finalResponse.classification,
+          };
+          setMessages((prev) => [...prev, aiResponse]);
+        } else {
+          // If no context needed, just show the response
+          const aiResponse: Message = {
+            id: Date.now(),
+            text: response.content,
+            sender: "agent",
+            classification: response.classification,
+          };
+          setMessages((prev) => [...prev, aiResponse]);
+        }
       } catch (error) {
         console.error("Error getting AI response:", error);
         const errorMessage: Message = {
@@ -109,7 +148,7 @@ const LiveChat = () => {
         {isOpen && (
           <div className="flex flex-col h-full">
             <div className="flex justify-between items-center p-4 border-b bg-purple-500 text-white rounded-t-lg">
-              <h2 className="text-lg font-semibold">Live Chat</h2>
+              <h2 className="text-lg font-semibold">AI Chat</h2>
               <button
                 className="text-white hover:text-blue-200"
                 onClick={() => setIsOpen(false)}

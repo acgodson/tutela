@@ -25,6 +25,7 @@ import PigStatus from "@/components/molecules/PigStatus";
 import { useEthContext } from "@/contexts/EthContext";
 import { usePigManagement } from "@/hooks/usePigManagement";
 import LiveChat from "@/components/organisms/LiveChat";
+import TutelaBanner from "@/components/molecules/tutelaBanner";
 
 export default function Dashboard() {
   const [isDetailedView, setIsDetailedView] = React.useState(false);
@@ -221,6 +222,7 @@ export default function Dashboard() {
       ) : (
         <>
           <StatsCards />
+          <TutelaBanner />
           {currentFarmId && isDetailedView ? (
             <DetailedView />
           ) : (

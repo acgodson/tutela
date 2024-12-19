@@ -3,7 +3,7 @@ import { baseProcedure, createTRPCRouter } from "../init";
 import { customAlphabet } from "nanoid";
 import { getAccountIdFromEvmAddress, sendMinimalHbar } from "@/evm/queries";
 import { HealthStatusMessage, PigMessage } from "@/utils/dashboardTypes";
-import { fetchQueryResponse } from "@/utils/openAI";
+import { ChainResponse, fetchQueryResponse } from "@/utils/openAI";
 
 const generateRFID = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ", 8);
 
@@ -306,21 +306,25 @@ export const appRouter = createTRPCRouter({
     .input(
       z.object({
         prompt: z.string(),
+        context: z
+          .object({
+            summary: z.string(),
+            details: z.string(),
+          })
+          .nullable(),
       })
     )
-    .mutation(async ({ input }) => {
-      // Prepare farm/region context
-      const context = ``;
-
-      // Call AI API
-      const apiKey = process.env.OPENAI_KEY;
+    .mutation(async ({ input }): Promise<ChainResponse> => {
+      const apiKey = process.env.OPENAI_SECRET;
       if (!apiKey) {
         throw new Error("API key is not set");
       }
 
-      const result = await fetchQueryResponse(input.prompt, apiKey, context);
-      console.log("this is the result", result);
-      return { content: result };
+      const context = input.context
+        ? `${input.context.summary}\n\nDetailed Data:\n${input.context.details}`
+        : null;
+
+      return fetchQueryResponse(input.prompt, apiKey, context);
     }),
 });
 
