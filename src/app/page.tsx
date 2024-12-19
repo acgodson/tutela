@@ -26,6 +26,7 @@ import { useEthContext } from "@/contexts/EthContext";
 import { usePigManagement } from "@/hooks/usePigManagement";
 import LiveChat from "@/components/organisms/LiveChat";
 import TutelaBanner from "@/components/molecules/tutelaBanner";
+import DashboardSkeleton from "@/components/organisms/DashboardSkeleton";
 
 export default function Dashboard() {
   const [isDetailedView, setIsDetailedView] = React.useState(false);
@@ -39,6 +40,10 @@ export default function Dashboard() {
   const { pigs, stats, isLoading, error, refetchPigs } = usePigManagement(
     shouldShowFarmView ? currentFarmId : null
   );
+
+  const healthIndex = stats.totalPigs > 0 
+  ? ((stats.healthyPigs / stats.totalPigs) * 100).toFixed(1)
+  : "0.0";
 
   // Stats Cards Component
   const StatsCards = () => (
@@ -79,7 +84,8 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-500">
-              {((stats.healthyPigs / stats.totalPigs) * 100).toFixed(1)}%
+              {healthIndex}
+              {/* {((stats.healthyPigs / stats.totalPigs) * 100).toFixed(1)}% */}
             </div>
             <p className="text-xs text-gray-400">Last 24 hours</p>
           </CardContent>
@@ -216,9 +222,7 @@ export default function Dashboard() {
       )}
 
       {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-[#B86EFF] border-t-transparent rounded-full animate-spin" />
-        </div>
+        <DashboardSkeleton />
       ) : (
         <>
           <StatsCards />
@@ -228,10 +232,27 @@ export default function Dashboard() {
           ) : (
             <RegionalView />
           )}
-
           <LiveChat />
         </>
       )}
+      {/* 
+      {isLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="w-8 h-8 border-4 border-[#B86EFF] border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          <StatsCards />
+     
+          {currentFarmId && isDetailedView ? (
+            <DetailedView />
+          ) : (
+            <RegionalView />
+          )}
+
+          <LiveChat />
+        </>
+      )} */}
     </div>
   );
 }

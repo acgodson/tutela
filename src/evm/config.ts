@@ -3,6 +3,8 @@ import { createClient, http, defineChain } from "viem";
 import { hederaTestnet } from "viem/chains";
 import { createConfig } from "@privy-io/wagmi";
 
+
+
 export const privyConfig = {
   loginMethods: ["google", "email"],
   defaultChain: hederaTestnet,
@@ -10,7 +12,7 @@ export const privyConfig = {
   appearance: {
     theme: "light",
     accentColor: "#676FFF",
-    logo: `https://www.tutela-8.vercel.app/vercel.svg`,
+    logo: 'https://tutela-8.vercel.app/logo.png',
   },
   embeddedWallets: {
     createOnLogin: "all-users",

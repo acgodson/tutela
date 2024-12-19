@@ -35,20 +35,18 @@ export const usePigManagement = (farmId: string | null) => {
 
   // Compute combined stats
   const stats = farmId
-    ? {
-        totalPigs: farmQuery.data?.length || 0,
-        healthyPigs:
-          farmQuery.data?.filter((pig) => !pig.latestStatus?.hasFever).length ||
-          0,
-        sickPigs:
-          farmQuery.data?.filter((pig) => pig.latestStatus?.hasFever).length ||
-          0,
-      }
-    : {
-        totalPigs: regionalQuery.data?.stats.totalPigs || 0,
-        healthyPigs: regionalQuery.data?.stats.healthyPigs || 0,
-        sickPigs: regionalQuery.data?.stats.sickPigs || 0,
-      };
+  ? {
+      totalPigs: farmQuery.data?.length ?? 0,
+      healthyPigs:
+        farmQuery.data?.filter((pig) => !pig?.latestStatus?.hasFever)?.length ?? 0,
+      sickPigs:
+        farmQuery.data?.filter((pig) => pig?.latestStatus?.hasFever)?.length ?? 0,
+    }
+  : {
+      totalPigs: regionalQuery.data?.stats?.totalPigs ?? 0,
+      healthyPigs: regionalQuery.data?.stats?.healthyPigs ?? 0,
+      sickPigs: regionalQuery.data?.stats?.sickPigs ?? 0,
+    };
 
   // Register new pig
   const { mutateAsync: registerPig, isPending: isRegistering } =

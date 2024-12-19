@@ -3,14 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "@/providers/providers";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
+const testRobot = localFont({
+  src: "./fonts/regular.woff",
   variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
   weight: "100 900",
 });
 
@@ -27,7 +22,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`
+          ${testRobot.className}  antialiased`}
         suppressHydrationWarning={true}
       >
         <Providers> {children} </Providers>

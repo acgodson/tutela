@@ -4,7 +4,7 @@ import { RunnableSequence } from "@langchain/core/runnables";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 import { z } from "zod";
 
-// Define response schemas
+
 const classificationSchema = z.enum(["general", "regional", "farm"]);
 type Classification = z.infer<typeof classificationSchema>;
 
@@ -70,7 +70,7 @@ export const getFullChain = (model: ChatOpenAI<ChatOpenAICallOptions>) => {
     classificationPromptTemplate,
     model,
     new StringOutputParser(),
-    // Add a cleanup step to remove quotes and trim
+    //cleanup step to remove quotes and trim
     (text: string) => text.replace(/['"]/g, "").trim().toLowerCase(),
   ]);
 
